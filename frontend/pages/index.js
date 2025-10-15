@@ -2,15 +2,23 @@
 
 import { useState } from "react";
 import axios from "axios";
-import ReactFlow, { MiniMap, Controls, Background } from "react-flow-renderer";
+import ReactFlow, {
+  MiniMap,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+} from "reactflow";
+import "reactflow/dist/style.css";
 
 export default function App() {
   const [ticker, setTicker] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -31,10 +39,9 @@ export default function App() {
         return;
       }
 
-      // Convert prices to nodes
       const newNodes = prices.map((p, i) => ({
         id: `${i}`,
-        position: { x: i * 120, y: Math.random() * 200 },
+        position: { x: i * 150, y: Math.random() * 200 },
         data: { label: `${p.date}\n$${p.close}` },
       }));
 
@@ -50,6 +57,7 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col items-center bg-gradient-to-r from-blue-100 via-white to-pink-100 p-4">
       <h1 className="text-3xl font-bold mb-4 text-gray-800">AI Stock Node Analyzer</h1>
+
       <div className="flex gap-2 mb-6">
         <input
           type="text"
@@ -78,8 +86,15 @@ export default function App() {
         </button>
       </div>
 
-      <div className="flex-1 w-full rounded shadow bg-white">
-        <ReactFlow nodes={nodes} edges={edges} fitView>
+      <div className="flex-1 w-full rounded shadow bg-white min-h-[400px]">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          fitView
+          attributionPosition="bottom-left"
+        >
           <MiniMap />
           <Controls />
           <Background color="#aaa" gap={16} />
