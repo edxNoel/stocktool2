@@ -19,13 +19,10 @@
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
-    
-  ]
-  {
+  ],
   "functions": {
     "api/**/*.py": {
       "runtime": "python3.11"
     }
   }
 }
-
