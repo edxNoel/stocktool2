@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import axios from "axios";
-import ReactFlow, { MiniMap, Controls, Background } from "react-flow-renderer";
+import ReactFlow, { MiniMap, Controls, Background } from "reactflow";
+import 'reactflow/dist/style.css';
 
 export default function Home() {
   const [ticker, setTicker] = useState("");
@@ -27,7 +28,6 @@ export default function Home() {
       });
 
       const prices = data.prices;
-
       if (!prices || prices.length === 0) {
         alert("No data found for this ticker/date range");
         setLoading(false);
@@ -36,7 +36,7 @@ export default function Home() {
 
       const newNodes = prices.map((p, i) => ({
         id: `${i}`,
-        position: { x: i * 130, y: Math.random() * 180 },
+        position: { x: i * 140, y: Math.random() * 200 },
         data: { label: `${p.date}\n$${p.close.toFixed(2)}` },
       }));
 
@@ -52,12 +52,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-tr from-indigo-50 via-white to-pink-50 p-6">
-      {/* Header */}
       <h1 className="text-4xl md:text-5xl font-extrabold mb-6 text-indigo-900 text-center drop-shadow-md">
         AI Stock Node Analyzer
       </h1>
 
-      {/* Input Panel */}
       <div className="flex flex-col md:flex-row gap-3 mb-6 w-full max-w-4xl">
         <input
           type="text"
@@ -86,7 +84,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Node Visualization */}
       <div className="flex-1 w-full max-w-6xl h-[500px] rounded-2xl shadow-xl bg-white border border-gray-200 overflow-hidden mb-6">
         <ReactFlow nodes={nodes} edges={edges} fitView>
           <MiniMap nodeStrokeColor={(n) => "#4F46E5"} nodeColor={(n) => "#C7D2FE"} />
@@ -95,7 +92,6 @@ export default function Home() {
         </ReactFlow>
       </div>
 
-      {/* AI Analysis Panel */}
       {analysis && (
         <div className="w-full max-w-4xl p-6 bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-xl border border-gray-200">
           <h2 className="text-2xl font-bold mb-3 text-indigo-900">AI Analysis</h2>
