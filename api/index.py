@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
 import os
-
+print("ALPHA_VANTAGE_API_KEY:", os.environ.get("ALPHA_VANTAGE_API_KEY"))
 app = FastAPI()
 
 # Request schema must match the frontend keys exactly
