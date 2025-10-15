@@ -2,9 +2,7 @@
 import os
 from fastapi import FastAPI, HTTPException
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
 
 app = FastAPI()
 ALPHA_KEY = os.getenv("ALPHA_VANTAGE_KEY")
