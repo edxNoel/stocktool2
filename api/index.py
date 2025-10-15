@@ -1,54 +1,53 @@
-# backend/api/index.py
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import requests
+import yfinance as yf
 import os
-print("ALPHA_VANTAGE_API_KEY:", os.environ.get("ALPHA_VANTAGE_API_KEY"))
+import openai
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
 
-# Request schema must match the frontend keys exactly
+# Allow requests from frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # replace * with your frontend URL in production
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+openai.api_key = os.environ.get("OPENAI_API_KEY")
+if not openai.api_key:
+    raise Exception("Please set OPENAI_API_KEY in environment variables")
+
 class AnalyzeRequest(BaseModel):
     ticker: str
     start_date: str
     end_date: str
 
-ALPHA_VANTAGE_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY")
-if not ALPHA_VANTAGE_KEY:
-    raise Exception("Please set ALPHA_VANTAGE_API_KEY in your environment variables")
-
 @app.post("/api/analyze")
-async def analyze(req: AnalyzeRequest):
-    ticker = req.ticker.upper()
-    start_date = req.start_date
-    end_date = req.end_date
+async def analyze_stock(req: AnalyzeRequest):
+    # Fetch stock data
+    try:
+        stock = yf.Ticker(req.ticker)
+        hist = stock.history(start=req.start_date, end=req.end_date)
+        if hist.empty:
+            raise HTTPException(status_code=404, detail="No stock data found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    url = (
-        f"https://www.alphavantage.co/query"
-        f"?function=TIME_SERIES_DAILY_ADJUSTED"
-        f"&symbol={ticker}"
-        f"&outputsize=full"
-        f"&apikey={ALPHA_VANTAGE_KEY}"
-    )
+    # Convert to list of prices
+    prices = [{"date": str(idx.date()), "close": float(row["Close"])} for idx, row in hist.iterrows()]
 
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to fetch data from Alpha Vantage")
+    # Use OpenAI to generate insight
+    try:
+        prompt = f"Analyze the following stock price data and summarize trends:\n{prices}"
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300
+        )
+        analysis = response.choices[0].message.content
+    except Exception as e:
+        analysis = f"OpenAI analysis failed: {e}"
 
-    data = response.json()
-    if "Time Series (Daily)" not in data:
-        raise HTTPException(status_code=422, detail="Invalid ticker or no data returned")
-
-    # Extract and filter by date range
-    time_series = data["Time Series (Daily)"]
-    prices = []
-    for date, daily_data in sorted(time_series.items()):
-        if start_date <= date <= end_date:
-            prices.append({
-                "date": date,
-                "close": float(daily_data["4. close"])
-            })
-
-    if not prices:
-        raise HTTPException(status_code=422, detail="No price data found for ticker/date range")
-
-    return {"prices": prices}
+    return {"prices": prices, "analysis": analysis}
