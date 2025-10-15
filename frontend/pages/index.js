@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import axios from "axios";
-import ReactFlow, { MiniMap, Controls, Background } from "reactflow";
-import 'reactflow/dist/style.css';
+import ReactFlow, { MiniMap, Controls, Background } from "react-flow-renderer";
 
-export default function Home() {
+export default function App() {
   const [ticker, setTicker] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
-  const [analysis, setAnalysis] = useState("");
   const [loading, setLoading] = useState(false);
+  const [analysis, setAnalysis] = useState("");
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -21,13 +20,14 @@ export default function Home() {
     setAnalysis("");
 
     try {
-      const { data } = await axios.post("/api/analyze", {
+      const response = await axios.post("http://localhost:5000/api/analyze", {
         ticker,
         start_date: startDate,
         end_date: endDate,
       });
 
-      const prices = data.prices;
+      const prices = response.data.prices;
+
       if (!prices || prices.length === 0) {
         alert("No data found for this ticker/date range");
         setLoading(false);
@@ -36,12 +36,12 @@ export default function Home() {
 
       const newNodes = prices.map((p, i) => ({
         id: `${i}`,
-        position: { x: i * 140, y: Math.random() * 200 },
-        data: { label: `${p.date}\n$${p.close.toFixed(2)}` },
+        position: { x: i * 120, y: Math.random() * 200 },
+        data: { label: `${p.date}\n$${p.close}` },
       }));
 
       setNodes(newNodes);
-      setAnalysis(data.analysis);
+      setAnalysis(response.data.analysis);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -51,51 +51,48 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gradient-to-tr from-indigo-50 via-white to-pink-50 p-6">
-      <h1 className="text-4xl md:text-5xl font-extrabold mb-6 text-indigo-900 text-center drop-shadow-md">
-        AI Stock Node Analyzer
-      </h1>
-
-      <div className="flex flex-col md:flex-row gap-3 mb-6 w-full max-w-4xl">
+    <div className="h-screen flex flex-col items-center bg-gradient-to-r from-blue-100 via-white to-pink-100 p-4">
+      <h1 className="text-3xl font-bold mb-4 text-gray-800">AI Stock Node Analyzer</h1>
+      <div className="flex gap-2 mb-6">
         <input
           type="text"
           placeholder="Ticker (AAPL)"
           value={ticker}
-          onChange={(e) => setTicker(e.target.value.toUpperCase())}
-          className="flex-1 p-3 rounded-lg shadow-md border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+          onChange={(e) => setTicker(e.target.value)}
+          className="p-2 rounded shadow border border-gray-300"
         />
         <input
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="p-3 rounded-lg shadow-md border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+          className="p-2 rounded shadow border border-gray-300"
         />
         <input
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="p-3 rounded-lg shadow-md border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+          className="p-2 rounded shadow border border-gray-300"
         />
         <button
           onClick={handleAnalyze}
-          className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-lg"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
         >
           {loading ? "Analyzing..." : "Analyze"}
         </button>
       </div>
 
-      <div className="flex-1 w-full max-w-6xl h-[500px] rounded-2xl shadow-xl bg-white border border-gray-200 overflow-hidden mb-6">
+      <div className="flex-1 w-full rounded shadow bg-white p-4">
         <ReactFlow nodes={nodes} edges={edges} fitView>
-          <MiniMap nodeStrokeColor={(n) => "#4F46E5"} nodeColor={(n) => "#C7D2FE"} />
+          <MiniMap />
           <Controls />
-          <Background color="#E5E7EB" gap={16} />
+          <Background color="#aaa" gap={16} />
         </ReactFlow>
       </div>
 
       {analysis && (
-        <div className="w-full max-w-4xl p-6 bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-xl border border-gray-200">
-          <h2 className="text-2xl font-bold mb-3 text-indigo-900">AI Analysis</h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{analysis}</p>
+        <div className="mt-4 p-4 w-full max-w-4xl rounded shadow bg-gray-50">
+          <h2 className="text-xl font-semibold mb-2">AI Analysis</h2>
+          <p>{analysis}</p>
         </div>
       )}
     </div>
